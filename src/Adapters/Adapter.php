@@ -14,6 +14,7 @@ use Embed\ImageInfo;
  * @property null|string  $title
  * @property null|string  $description
  * @property null|string  $url
+ * @property null|string  $canonicalUrl
  * @property null|string  $type
  * @property array        $images
  * @property null|string  $image
@@ -191,6 +192,14 @@ abstract class Adapter
 
     /**
      * {@inheritdoc}
+     */
+    public function getCanonicalUrl()
+    {
+        return $this->getUrlFromProviders('canonicalUrl');
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function getSource()
     {
