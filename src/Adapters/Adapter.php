@@ -11,6 +11,7 @@ use Embed\FastImage;
  * @property null|string  $title
  * @property null|string  $description
  * @property null|string  $url
+ * @property null|string  $canonicalUrl
  * @property null|string  $type
  * @property array        $images
  * @property null|string  $image
@@ -160,6 +161,14 @@ abstract class Adapter
     public function getUrl()
     {
         return $this->getUrlFromProviders('url') ?: $this->request->url->getUrl();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getCanonicalUrl()
+    {
+        return $this->getUrlFromProviders('canonicalUrl');
     }
 
     /**

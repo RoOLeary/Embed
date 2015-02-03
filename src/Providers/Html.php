@@ -262,6 +262,16 @@ class Html extends Provider
     }
 
     /**
+     * Gets the canonical url
+     *
+     * @return string|null
+     */
+    public function getCanonicalUrl()
+    {
+        return $this->get('canonical');
+    }
+
+    /**
      * Gets all provider icons
      *
      * @return array

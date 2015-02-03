@@ -31,7 +31,8 @@ $info = Embed\Embed::create('https://www.youtube.com/watch?v=PP1xn5wHtxE');
 
 $info->title; //The page title
 $info->description; //The page description
-$info->url; //The canonical url
+$info->url; //The url as reported by OpenGraph, falling back to the tag <meta rel='canonical'>
+$info->canonicalUrl;  //The canonical url, as reported by the tag <meta rel='canonical'>
 $info->type; //The page type (link, video, image, rich)
 
 $info->images; //List of all images found in the page
