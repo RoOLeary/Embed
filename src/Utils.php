@@ -65,7 +65,10 @@ class Utils
         $values = [];
 
         foreach ($providers as $key => $provider) {
-            $value = $provider->$method();
+            $value = '';
+            if(method_exists($provider, $method)) {
+                $value = $provider->$method();
+            }
 
             if (empty($value)) {
                 continue;

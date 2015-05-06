@@ -147,6 +147,14 @@ class OEmbed extends Provider implements ProviderInterface
     /**
      * {@inheritdoc}
      */
+    public function getCanonicalUrl()
+    {
+        return $this->bag->get('canonical');
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
     public function getImagesUrls()
     {
         $images = [];
