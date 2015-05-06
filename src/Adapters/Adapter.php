@@ -195,15 +195,7 @@ abstract class Adapter
      */
     public function getCanonicalUrl()
     {
-        return $this->getUrlFromProviders('canonicalUrl');
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getSource()
-    {
-        return $this->getUrlFromProviders('canonicalUrl');
+        return Utils::getFirstValue(Utils::getData($this->providers, 'url', $this->request->url));
     }
 
     /**
