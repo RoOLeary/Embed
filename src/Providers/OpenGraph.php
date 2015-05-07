@@ -26,6 +26,8 @@ class OpenGraph extends Provider implements ProviderInterface
                 $name = substr($name, 11);
             } elseif (strpos($name, 'og:') === 0) {
                 $name = substr($name, 3);
+            } elseif (strpos($name, 'article:') === 0) {
+                $name = substr($name, 8);
             } else {
                 continue;
             }
