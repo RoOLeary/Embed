@@ -38,6 +38,14 @@ class Html extends Provider implements ProviderInterface
         if ($title->length) {
             $this->bag->set('title', $title->item(0)->nodeValue);
         }
+
+        if($this->getCanonicalUrl()) {
+            preg_match('/(\d{4})\/(\d{2})\/(\d{2})/', parse_url(￼$this->getCanonicalUrl(), PHP_URL_PATH), $match);
+            if(count($match) == 4) {
+                $publishedTime = (count($match) == 4) ? "$match[1]-$match[2]-$match[3] 00:00:00" : null;
+                $this->bag->add('urldate', $publishedTime);
+            } 
+        }
     }
 
     /**
@@ -149,7 +157,8 @@ class Html extends Provider implements ProviderInterface
         return $this->bag->get('pub_date')
             ?: $this->bag->get('date')
             ?: $this->bag->get('pagerender')
-            ?: $this->bag->get('datepublished');
+            ?: $this->bag->get('datepublished')
+            ?: $this->bag->get('urldate');
     }
 
     /**
