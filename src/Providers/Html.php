@@ -40,7 +40,7 @@ class Html extends Provider implements ProviderInterface
         }
 
         if($this->getCanonicalUrl()) {
-            $path = parse_url(￼$this->getCanonicalUrl(), PHP_URL_PATH);
+            $path = parse_url($this->getCanonicalUrl(), PHP_URL_PATH);
             if($path) {
                 preg_match('/(\d{4})\/(\d{2})\/(\d{2})/', $path, $match);
                 if(count($match) == 4) {
