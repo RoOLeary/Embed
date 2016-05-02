@@ -194,7 +194,7 @@ abstract class Adapter
      */
     public function getCanonicalUrl()
     {
-        return Utils::getFirstValue(Utils::getData($this->providers, 'canonicalUrl', $this->request->url));
+        return Utils::getFirstValue(Utils::getData($this->providers, 'canonicalUrl', $this->request));
     }
 
     /**

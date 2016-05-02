@@ -73,6 +73,13 @@ abstract class Provider
     /**
      * {@inheritdoc}
      */
+    public function getCanonicalUrl()
+    {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getUrl()
     {
     }
