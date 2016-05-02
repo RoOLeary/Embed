@@ -1,4 +1,5 @@
 <?php
+
 namespace Embed\Providers\OEmbed;
 
 use Embed\Url;
@@ -8,7 +9,7 @@ class Instagram extends OEmbedImplementation
     /**
      * {@inheritdoc}
      */
-    public static function getEndPoint()
+    public static function getEndPoint(Url $url)
     {
         return 'http://api.instagram.com/oembed';
     }
@@ -18,7 +19,10 @@ class Instagram extends OEmbedImplementation
      */
     public static function getPatterns()
     {
-        return ['http://instagram.com/p/*'];
+        return [
+            'https?://instagram.com/p/*',
+            'https?://www.instagram.com/p/*',
+        ];
     }
 
     /**
@@ -26,10 +30,6 @@ class Instagram extends OEmbedImplementation
      */
     public static function getParams(Url $url)
     {
-        $url = clone $url;
-
-        $url->setScheme('http');
-
-        return ['url' => $url->getUrl()];
+        return ['url' => $url->withScheme('http')->getUrl()];
     }
 }

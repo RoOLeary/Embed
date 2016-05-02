@@ -1,4 +1,5 @@
 <?php
+
 namespace Embed;
 
 use Embed\Adapters\AdapterInterface;
@@ -6,20 +7,19 @@ use Embed\Adapters\AdapterInterface;
 class Embed
 {
     /**
-     * Gets the info from an url
+     * Gets the info from an url.
      *
      * @param string|Request $request The url or a request with the url
      * @param array          $config  Options passed to the adapter
      *
-     * @return false|AdapterInterface
+     * @throws Exceptions\InvalidUrlException If the urls is not valid
+     * @throws \InvalidArgumentException      If any config argument is not valid
+     *
+     * @return AdapterInterface
      */
-    public static function create($request, array $config = [])
+    public static function create($request, array $config = array())
     {
-        $request = self::getRequest($request, isset($config['request']) ? $config['request'] : null);
-
-        if (!$request->isValid()) {
-            return false;
-        }
+        $request = self::getRequest($request, isset($config['resolver']) ? $config['resolver'] : null);
 
         //Use custom adapter
         if (!empty($config['adapter']['class'])) {
@@ -34,7 +34,7 @@ class Embed
         }
 
         //Search the adapter using the domain
-        $adapter = 'Embed\\Adapters\\'.str_replace(' ', '', ucwords(strtolower(str_replace('-', ' ', $request->url->getDomain()))));
+        $adapter = 'Embed\\Adapters\\'.$request->getClassNameForDomain();
 
         if (class_exists($adapter) && ($info = self::executeAdapter($adapter, $request, $config))) {
             return $info;
@@ -45,11 +45,17 @@ class Embed
             return $info;
         }
 
-        return false;
+        $error = $request->getError();
+
+        if (empty($error)) {
+            throw new Exceptions\InvalidUrlException(sprintf("The url '%s' returns the http code %s", $request->getUrl(), $request->getHttpCode()));
+        }
+
+        throw new Exceptions\InvalidUrlException(sprintf("The url '%s' returns the following error: %s", $request->getUrl(), $error));
     }
 
     /**
-     * Gets the info from a source (list of urls)
+     * Gets the info from a source (list of urls).
      *
      * @param string|Request $request The url or a request with the source url
      * @param null|array     $config  Options passed to the adapter
@@ -77,7 +83,7 @@ class Embed
     }
 
     /**
-     * Execute an adapter
+     * Execute an adapter.
      *
      * @param string     $adapter Adapter class name
      * @param Request    $request
@@ -101,7 +107,7 @@ class Embed
     }
 
     /**
-     * Init a request
+     * Init a request.
      *
      * @param string|Request $request The url or a request with the url
      * @param null|array     $config  Options passed to the adapter
@@ -113,19 +119,15 @@ class Embed
     private static function getRequest($request, array $config = null)
     {
         if (is_string($request)) {
-            return new Request(new Url($request));
+            return new Request(
+                $request,
+                isset($config['class']) ? $config['class'] : null,
+                isset($config['config']) ? $config['config'] : []
+            );
         }
 
         if (!($request instanceof Request)) {
-            throw new \InvalidArgumentException("Embed::create only accepts instances of Embed\\Request or strings");
-        }
-
-        if (isset($config['resolver'])) {
-            $request->setResolverClass($config['class']);
-        }
-
-        if (isset($config['config'])) {
-            $request->setResolverConfig($config['config']);
+            throw new \InvalidArgumentException('Embed::create only accepts instances of Embed\\Request or strings');
         }
 
         return $request;

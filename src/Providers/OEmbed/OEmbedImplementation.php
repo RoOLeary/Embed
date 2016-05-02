@@ -1,28 +1,29 @@
 <?php
-namespace Embed\Providers\Oembed;
+
+namespace Embed\Providers\OEmbed;
 
 use Embed\Url;
 
 /**
- * Abstract class extended by all oembed classes
+ * Abstract class extended by all oembed classes.
  *
  * Provides the endPoint, pattern and params of the well known oembed implementations
  */
 abstract class OEmbedImplementation
 {
     /**
-     * @access public
      * @author Oliver Lillie
+     *
      * @return string
      */
-    public static function getEndPoint()
+    public static function getEndPoint(Url $url)
     {
         return '';
     }
 
     /**
-     * @access public
      * @author Oliver Lillie
+     *
      * @return array
      */
     public static function getPatterns()
@@ -31,12 +32,22 @@ abstract class OEmbedImplementation
     }
 
     /**
-     * @access public
      * @author Oliver Lillie
+     *
      * @return array
      */
     public static function getParams(Url $url)
     {
-        return ['url' => $url->getUrl()];
+        return [];
+    }
+
+    /**
+     * @author Dave Ross
+     *
+     * @return bool
+     */
+    public static function embedInDomIsBroken()
+    {
+        return false;
     }
 }

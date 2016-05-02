@@ -1,4 +1,5 @@
 <?php
+
 namespace Embed\Providers\OEmbed;
 
 use Embed\Url;
@@ -8,7 +9,7 @@ class Deviantart extends OEmbedImplementation
     /**
      * {@inheritdoc}
      */
-    public static function getEndPoint()
+    public static function getEndPoint(Url $url)
     {
         return 'http://backend.deviantart.com/oembed';
     }
@@ -18,7 +19,7 @@ class Deviantart extends OEmbedImplementation
      */
     public static function getPatterns()
     {
-        return ['http://www.deviantart.com/art/*', 'http://www.deviantart.com/#/d*'];
+        return ['http://*.deviantart.com/art/*', 'http://www.deviantart.com/#/d*'];
     }
 
     /**
@@ -27,7 +28,6 @@ class Deviantart extends OEmbedImplementation
     public static function getParams(Url $url)
     {
         return [
-            'url' => $url->getUrl(),
             'for' => 'embed',
         ];
     }

@@ -1,15 +1,16 @@
 <?php
-/**
- * Class to store and access to data
- */
+
 namespace Embed;
 
+/**
+ * Class to store and access to data.
+ */
 class Bag
 {
     protected $parameters = [];
 
     /**
-     * Save a value
+     * Save a value.
      *
      * @param string|array $name  Name of the value
      * @param mixed        $value The value to save
@@ -24,7 +25,7 @@ class Bag
     }
 
     /**
-     * Adds a subvalue
+     * Adds a subvalue.
      *
      * @param string $name  Name of the value
      * @param mixed  $value The value to add
@@ -43,28 +44,35 @@ class Bag
     }
 
     /**
-     * Get a value, all values or null if not exists
+     * Get a value.
      *
-     * @param string      $name    Value name
-     * @param null|string $subname A subvalue name
+     * @param string $name Value name
      *
      * @return string|null
      */
-    public function get($name, $subname = null)
+    public function get($name)
     {
-        if ($subname === null) {
-            return isset($this->parameters[$name]) ? $this->parameters[$name] : null;
+        if (strpos($name, '[') !== false) {
+            $names = explode('[', str_replace(']', '', $name));
+            $key = array_shift($names);
+            $item = isset($this->parameters[$key]) ? $this->parameters[$key] : [];
+
+            foreach ($names as $key) {
+                if (!isset($item[$key])) {
+                    return;
+                }
+
+                $item = $item[$key];
+            }
+
+            return $item;
         }
 
-        if (!isset($this->parameters[$name][$subname])) {
-            return;
-        }
-
-        return $this->parameters[$name][$subname];
+        return isset($this->parameters[$name]) ? $this->parameters[$name] : null;
     }
 
     /**
-     * Return all stored values
+     * Return all stored values.
      *
      * @return array
      */
@@ -74,14 +82,30 @@ class Bag
     }
 
     /**
-     * Check if a value exists
+     * Check if a value exists.
      *
      * @param string $name Value name
      *
-     * @return boolean True if exists, false if not
+     * @return bool True if exists, false if not
      */
     public function has($name)
     {
+        if (strpos($name, '[') !== false) {
+            $names = explode('[', str_replace(']', '', $name));
+            $key = array_shift($names);
+            $item = isset($this->parameters[$key]) ? $this->parameters[$key] : [];
+
+            foreach ($names as $key) {
+                if (!isset($item[$key])) {
+                    return false;
+                }
+
+                $item = $item[$key];
+            }
+
+            return isset($item);
+        }
+
         return isset($this->parameters[$name]);
     }
 }

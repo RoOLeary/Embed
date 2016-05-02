@@ -6,7 +6,17 @@ include '../src/autoloader.php';
 
 function get($name, $default = '')
 {
-    return isset($_GET[$name]) ? $_GET[$name] : $default;
+    if (!isset($_GET[$name])) {
+        return $default;
+    }
+
+    if ($name === 'url') {
+        if (!filter_var($_GET['url'], FILTER_VALIDATE_URL)) {
+            return 'http://doNotTryToXSS.invalid';
+        }
+    }
+
+    return $_GET[$name];
 }
 
 function getEscaped($name, $default = '')
@@ -70,6 +80,7 @@ $providerData = [
     'description' => 'printText',
     'url' => 'printUrl',
     'type' => 'printText',
+    'tags' => 'printArray',
     'imagesUrls' => 'printArray',
     'code' => 'printCode',
     'source' => 'printUrl',
@@ -88,6 +99,7 @@ $adapterData = [
     'description' => 'printText',
     'url' => 'printUrl',
     'type' => 'printText',
+    'tags' => 'printArray',
     'image' => 'printImage',
     'imageWidth' => 'printText',
     'imageHeight' => 'printText',
@@ -140,13 +152,17 @@ $adapterData = [
         <section>
             <h1>Result:</h1>
 
-            <?php $info = Embed\Embed::create(get('url')); ?>
-
-            <?php if (!$info): ?>
-
-            <p>The url is not valid!</p>
-
-            <?php else: ?>
+            <?php
+            try {
+                $info = Embed\Embed::create(get('url'));
+            } catch (Exception $exception) {
+                echo '<p>'.$exception->getMessage().'</p>';
+                echo '</section>';
+                echo '</body>';
+                echo '</html>';
+                die();
+            }
+            ?>
 
             <table>
                 <?php foreach ($adapterData as $name => $fn): ?>
@@ -162,17 +178,6 @@ $adapterData = [
             </div>
 
             <div id="advanced-data">
-                <?php if (isset($info->api)): ?>
-                <h2>Data provider by the custom API</h2>
-
-                <table>
-                    <tr>
-                        <th>Data provider by the API</th>
-                        <td><?php printArray($info->api->getAll(), false); ?></td>
-                    </tr>
-                </table>
-                <?php endif ?>
-
                 <?php foreach ($info->getAllProviders() as $providerName => $provider): ?>
                 <h2><?php echo $providerName; ?> provider</h2>
 
@@ -186,13 +191,13 @@ $adapterData = [
 
                     <tr>
                         <th>All data collected</th>
-                        <td><?php printArray($provider->bag->getAll(), false); ?></td>
+                        <td><?php printArray($provider->bag->getAll()); ?></td>
                     </tr>
 
                     <?php if (isset($provider->api)): ?>
                     <tr>
                         <th>Data provider by the API</th>
-                        <td><?php printArray($provider->api->getAll(), false); ?></td>
+                        <td><?php printArray($provider->api->getAll()); ?></td>
                     </tr>
                     <?php endif ?>
 
@@ -202,7 +207,7 @@ $adapterData = [
                 <h2>Http request info</h2>
 
                 <table>
-                    <?php foreach ($info->request->getRequestInfo() as $name => $value): ?>
+                    <?php foreach ($info->getRequest()->getRequestInfo() as $name => $value): ?>
                     <tr>
                         <th><?php echo $name; ?></th>
                         <td><?php printAny($value); ?></td>
@@ -213,10 +218,8 @@ $adapterData = [
                 <h2>Content</h2>
 
                 <pre>
-                    <?php printText($info->request->getContent()); ?>
+                    <?php printText($info->getRequest()->getContent()); ?>
                 </pre>
-
-                <?php endif; ?>
             </div>
         </section>
 

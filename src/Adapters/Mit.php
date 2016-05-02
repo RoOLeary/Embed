@@ -1,12 +1,13 @@
 <?php
-/**
- * Adapter to fix some issues from mit.edu (not complete yet)
- */
+
 namespace Embed\Adapters;
 
 use Embed\Request;
 use Embed\Utils;
 
+/**
+ * Adapter to fix some issues from mit.edu (not complete yet).
+ */
 class Mit extends Webpage implements AdapterInterface
 {
     /**
@@ -14,7 +15,7 @@ class Mit extends Webpage implements AdapterInterface
      */
     public static function check(Request $request)
     {
-        return $request->match([
+        return $request->isValid() && $request->match([
             'http://video.mit.edu/watch/*',
         ]);
     }

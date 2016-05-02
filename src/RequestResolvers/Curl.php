@@ -1,21 +1,25 @@
 <?php
-/**
- * Default class to resolve urls
- */
+
 namespace Embed\RequestResolvers;
 
+use Embed\Exceptions\EmbedException;
+
+/**
+ * Default class to resolve urls using curl.
+ */
 class Curl implements RequestResolverInterface
 {
+    protected static $tmpCookies;
     protected $isBinary;
-    protected $content;
     protected $result;
+    protected $content;
     protected $url;
     protected $config = [
         CURLOPT_MAXREDIRS => 20,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_TIMEOUT => 10,
-        CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
+        CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_ENCODING => '',
         CURLOPT_AUTOREFERER => true,
         CURLOPT_USERAGENT => 'Embed PHP Library',
@@ -24,33 +28,18 @@ class Curl implements RequestResolverInterface
 
     public static $binaryContentTypes = [
         '#image/.*#',
-        '#application/(pdf|x-download|zip|pdf|msword|vnd\\.ms|postscript|octet-stream|ogg)#',
+        '#application/(pdf|x-download|zip|pdf|msword|vnd\\.ms|postscript|octet-stream|ogg|x-iso9660-image)#',
         '#application/x-zip.*#',
     ];
 
     /**
      * {@inheritdoc}
      */
-    public function __construct($url)
+    public function __construct($url, array $config)
     {
         $this->url = $url;
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setConfig(array $config)
-    {
         $this->config = $config + $this->config;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setUrl($url)
-    {
-        $this->result = $this->content = null;
-        $this->url = $url;
     }
 
     /**
@@ -80,6 +69,14 @@ class Curl implements RequestResolverInterface
     /**
      * {@inheritdoc}
      */
+    public function getError()
+    {
+        return $this->getResult('error');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getContent()
     {
         if ($this->content === null) {
@@ -102,7 +99,7 @@ class Curl implements RequestResolverInterface
     }
 
     /**
-     * Get the result of the http request
+     * Get the result of the http request.
      *
      * @param string $name Parameter name
      *
@@ -118,14 +115,24 @@ class Curl implements RequestResolverInterface
     }
 
     /**
-     * Resolves the current url and get the content and other data
+     * Resolves the current url and get the content and other data.
      */
     protected function resolve()
     {
         $this->content = '';
         $this->isBinary = null;
 
-        $tmpCookies = str_replace('//', '/', sys_get_temp_dir().'/embed-cookies.txt');
+        if (!self::$tmpCookies) {
+            self::$tmpCookies = str_replace('//', '/', sys_get_temp_dir().'/embed-cookies.txt');
+
+            if (is_file(self::$tmpCookies)) {
+                if (!is_writable(self::$tmpCookies)) {
+                    throw new EmbedException(sprintf('The temporary cookies file "%s" is not writable', self::$tmpCookies));
+                }
+            } elseif (!is_writable(dirname(self::$tmpCookies))) {
+                throw new EmbedException(sprintf('The temporary folder "%s" is not writable', dirname(self::$tmpCookies)));
+            }
+        }
 
         $connection = curl_init();
 
@@ -133,8 +140,8 @@ class Curl implements RequestResolverInterface
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_URL => $this->url,
-            CURLOPT_COOKIEJAR => $tmpCookies,
-            CURLOPT_COOKIEFILE => $tmpCookies,
+            CURLOPT_COOKIEJAR => self::$tmpCookies,
+            CURLOPT_COOKIEFILE => self::$tmpCookies,
             CURLOPT_HEADERFUNCTION => [$this, 'headerCallback'],
             CURLOPT_WRITEFUNCTION => [$this, 'writeCallback'],
         ] + $this->config);
@@ -159,7 +166,7 @@ class Curl implements RequestResolverInterface
                 $charset = substr(strtoupper(strstr($charset, '=')), 1);
 
                 if (!empty($charset) && !empty($this->content) && ($charset !== 'UTF-8')) {
-                    $this->content = @mb_convert_encoding($this->content, 'UTF-8', $charset);
+                    $this->content = mb_convert_encoding($this->content, 'UTF-8', $charset);
                 }
             } elseif (strpos($content_type, '/') !== false) {
                 $this->result['mime_type'] = $content_type;
@@ -169,7 +176,7 @@ class Curl implements RequestResolverInterface
 
     protected function headerCallback($connection, $string)
     {
-        if (($this->isBinary === null) && strpos($string, ':')) {
+        if (strpos($string, ':')) {
             list($name, $value) = array_map('trim', explode(':', $string, 2));
 
             if (strtolower($name) === 'content-type') {

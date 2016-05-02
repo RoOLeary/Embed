@@ -21,6 +21,13 @@
 		"php": ">=5.4.0",
 		"ext-curl": "*"
 	},
+    "require-dev": {
+        "guzzlehttp/guzzle": "5.x",
+        "phpunit/phpunit": "*"
+    },
+    "suggest": {
+        "guzzlehttp/guzzle@5.x": "To use Guzzle5 request resolver"
+    },
 	"autoload": {
 		"psr-4": {
 			"Embed\\": "src"

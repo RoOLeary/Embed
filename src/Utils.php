@@ -1,13 +1,14 @@
 <?php
+
 namespace Embed;
 
 /**
- * Some helpers methods used across the library
+ * Some helpers methods used across the library.
  */
 class Utils
 {
     /**
-     * Extract all meta elements from html
+     * Extract all meta elements from html.
      *
      * @param \DOMDocument $html
      *
@@ -20,7 +21,6 @@ class Utils
         foreach ($html->getElementsByTagName('meta') as $meta) {
             $name = trim(strtolower($meta->getAttribute('property') ?: $meta->getAttribute('name')));
             $value = $meta->getAttribute('content') ?: $meta->getAttribute('value');
-
             $metas[] = [$name, $value, $meta];
         }
 
@@ -28,17 +28,18 @@ class Utils
     }
 
     /**
-     * Extract all link elements from html
+     * Extract all link elements from html.
      *
      * @param \DOMDocument $html
+     * @param string       $tagName
      *
      * @return array with subarrays [rel, href, element]
      */
-    public static function getLinks(\DOMDocument $html)
+    public static function getLinks(\DOMDocument $html, $tagName = 'link')
     {
         $links = [];
 
-        foreach ($html->getElementsByTagName('link') as $link) {
+        foreach ($html->getElementsByTagName($tagName) as $link) {
             if ($link->hasAttribute('rel') && $link->hasAttribute('href')) {
                 $rel = trim(strtolower($link->getAttribute('rel')));
                 $href = $link->getAttribute('href');
@@ -51,7 +52,7 @@ class Utils
     }
 
     /**
-     * Search and returns all data retrieved by the providers
+     * Search and returns all data retrieved by the providers.
      *
      * @param null|array $providers The providers used to retrieve the data
      * @param string     $name      The data name (title, description, image, etc)
@@ -65,11 +66,7 @@ class Utils
         $values = [];
 
         foreach ($providers as $key => $provider) {
-            $value = '';
-            if(method_exists($provider, $method)) {
-                $value = $provider->$method();
-            }
-
+            $value = $provider->$method();
             if (empty($value)) {
                 continue;
             }
@@ -88,7 +85,7 @@ class Utils
                         'value' => $v,
                         'providers' => [$key],
                     ];
-                } else {
+                } elseif (!in_array($key, $values[$v]['providers'], true)) {
                     $values[$v]['providers'][] = $key;
                 }
             }
@@ -98,7 +95,7 @@ class Utils
     }
 
     /**
-     * Order the data by provider
+     * Order the data by provider.
      *
      * @param array $values The array provided by self::getData()
      *
@@ -111,25 +108,25 @@ class Utils
         foreach ($values as $value) {
             foreach ($value['providers'] as $provider) {
                 if (!isset($sorted[$provider])) {
-                    $sorted[$provider] = [];
-                }
-
+                    $sorted[$provider] = [$value];
+                } else {
                 $sorted[$provider][] = $value;
             }
+        }
         }
 
         return $sorted;
     }
 
     /**
-     * Unshifts a new value if it does not exists
+     * Unshifts a new value if it does not exists.
      *
      * @param array $values The array provided by self::getData()
      * @param array $value  The value to insert
      */
     public static function unshiftValue(array &$values, $value)
     {
-        $key = Utils::searchValue($values, $value['value'], true);
+        $key = self::searchValue($values, $value['value'], true);
 
         if ($key === false) {
             return array_unshift($values, $value);
@@ -143,11 +140,11 @@ class Utils
     }
 
     /**
-     * Search by a value and returns its key
+     * Search by a value and returns its key.
      *
      * @param array   $values    The array provided by self::getData()
      * @param string  $value     The value to search
-     * @param boolean $returnKey Whether or not return the key instead the value
+     * @param bool   $returnKey Whether or not return the key instead the value
      *
      * @return array|false
      */
@@ -163,25 +160,48 @@ class Utils
     }
 
     /**
-     * Returns the first value if exists
+     * Returns the first value if exists.
      *
      * @param array   $values    The array provided by self::getData()
-     * @param boolean $returnKey Whether or not return the key instead the value
+     * @param bool  $returnKey Whether or not return the key instead the value
      *
      * @return string|null
      */
     public static function getFirstValue(array $values, $returnKey = false)
     {
-        if (isset($values[0])) {
-            return $returnKey ? 0 : $values[0]['value'];
+        $first = reset($values);
+
+        if (is_array($first)) {
+            return $returnKey ? key($values) : $first['value'];
         }
     }
 
     /**
-     * Returns the most popular value in an array
+     * Returns values as array.
      *
      * @param array   $values    The array provided by self::getData()
-     * @param boolean $returnKey Whether or not return the key instead the value
+     * @param bool  $returnKey Whether or not return the key instead the value
+     *
+     * @return array
+     */
+    public static function getAllValues(array $values, $returnKey = false)
+    {
+        if ($returnKey) {
+            return array_keys($values);
+        }
+        $return_value = [];
+        foreach ($values as $value) {
+            $return_value[] = $value['value'];
+        }
+
+        return $return_value;
+    }
+
+    /**
+     * Returns the most popular value in an array.
+     *
+     * @param array $values    The array provided by self::getData()
+     * @param bool  $returnKey Whether or not return the key instead the value
      *
      * @return mixed
      */
@@ -201,10 +221,10 @@ class Utils
     }
 
     /**
-     * Returns the bigger value
+     * Returns the bigger value.
      *
      * @param array   $values    The array provided by self::getData()
-     * @param boolean $returnKey Whether or not return the key instead the value
+     * @param bool  $returnKey Whether or not return the key instead the value
      *
      * @return null|string
      */
@@ -224,12 +244,12 @@ class Utils
     }
 
     /**
-     * Creates a <video> element
+     * Creates a <video> element.
      *
      * @param string       $poster  Poster attribute
      * @param string|array $sources Video sources
-     * @param integer      $width   Width attribute
-     * @param integer      $height  Height attribute
+     * @param int          $width   Width attribute
+     * @param int          $height  Height attribute
      *
      * @return string
      */
@@ -250,7 +270,7 @@ class Utils
     }
 
     /**
-     * Creates an <audio> element
+     * Creates an <audio> element.
      *
      * @param string|array $sources Audio sources
      *
@@ -258,7 +278,7 @@ class Utils
      */
     public static function audioHtml($sources)
     {
-        $code = "<audio controls>";
+        $code = '<audio controls>';
 
         foreach ((array) $sources as $source) {
             $code .= self::element('source', ['src' => $source]);
@@ -268,12 +288,12 @@ class Utils
     }
 
     /**
-     * Creates an <img> element
+     * Creates an <img> element.
      *
      * @param string  $src    Image source attribute
      * @param string  $alt    Alt attribute
-     * @param integer $width  Width attribute
-     * @param integer $height Height attribute
+     * @param int    $width  Width attribute
+     * @param int    $height Height attribute
      *
      * @return string
      */
@@ -288,30 +308,36 @@ class Utils
     }
 
     /**
-     * Creates an <iframe> element
+     * Creates an <iframe> element.
      *
      * @param string  $src          Iframe source attribute
-     * @param integer $width        Width attribute
-     * @param integer $height       Height attribute
-     * @param integer $extra_styles Extra css styles
+     * @param int    $width  Width attribute
+     * @param int    $height Height attribute
+     * @param int    $styles Extra css styles
      *
      * @return string
      */
-    public static function iframe($src, $width = 0, $height = 0, $extra_styles = '')
+    public static function iframe($src, $width = 0, $height = 0, $styles = '')
     {
         $width = $width ? (is_int($width) ? $width.'px' : $width) : '600px';
         $height = $height ? (is_int($height) ? $height.'px' : $height) : '400px';
+
+        if (empty($styles)) {
+            $styles = 'border:none;overflow:hidden;';
+        }
+
+        $styles .= "width:{$width};height:{$height};";
 
         return self::element('iframe', [
             'src' => $src,
             'frameborder' => 0,
             'allowTransparency' => 'true',
-            'style' => "border:none;overflow:hidden;width:$width;height:$height;$extra_styles",
+            'style' => $styles,
         ]).'</iframe>';
     }
 
     /**
-     * Creates an <iframe> element with a google viewer
+     * Creates an <iframe> element with a google viewer.
      *
      * @param string $src The file loaded by the viewer (pdf, doc, etc)
      *
@@ -326,11 +352,11 @@ class Utils
     }
 
     /**
-     * Creates a flash element
+     * Creates a flash element.
      *
      * @param string       $src    The swf file source
-     * @param null|integer $width  Width attribute
-     * @param null|integer $height Height attribute
+     * @param null|int $width  Width attribute
+     * @param null|int $height Height attribute
      *
      * @return string
      */
@@ -360,7 +386,7 @@ class Utils
     }
 
     /**
-     * Creates an html element
+     * Creates an html element.
      *
      * @param string $name  Element name
      * @param array  $attrs Element attributes

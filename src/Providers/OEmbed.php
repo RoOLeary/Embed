@@ -1,4 +1,5 @@
 <?php
+
 namespace Embed\Providers;
 
 use Embed\Request;
@@ -14,6 +15,7 @@ class OEmbed extends Provider implements ProviderInterface
     protected $config = [
         'parameters' => [],
         'embedlyKey' => null,
+        'iframelyKey' => null,
     ];
 
     /**
@@ -24,22 +26,27 @@ class OEmbed extends Provider implements ProviderInterface
         $endPoint = null;
         $params = $this->config['parameters'];
 
-        if (($html = $this->request->getHtmlContent()) && ($endPoint = self::getEndPointFromDom($html))) {
-            $params['url'] = $this->request->url->getUrl();
-        } elseif (($info = self::getEndPointFromRequest($this->request, $this->config))) {
+        if (self::providerEmbedInDomIsBroken($this->request) || (!($html = $this->request->getHtmlContent()) || !($endPoint = self::getEndPointFromDom($html)))) {
+            if (($info = self::getEndPointFromRequest($this->request, $this->config))) {
             $endPoint = $info['endPoint'];
             $params += $info['params'];
+        }
         }
 
         if (!$endPoint) {
             return;
         }
 
-        $endPointRequest = $this->request->createRequest($endPoint);
-        $endPointRequest->startingUrl->setParameter($params);
+        $endPointRequest = $this->request
+            ->withUrl($endPoint)
+            ->withAddedQueryParameters($params);
+
+        if (!$endPointRequest->hasQueryParameter('url')) {
+            $endPointRequest = $endPointRequest->withQueryParameter('url', $this->request->getUrl());
+        }
 
         // extract from xml
-        if (($endPointRequest->url->getExtension() === 'xml') || ($endPointRequest->url->getParameter('format') === 'xml')) {
+        if (($endPointRequest->getExtension() === 'xml') || ($endPointRequest->getQueryParameter('format') === 'xml')) {
             if ($parameters = $endPointRequest->getXmlContent()) {
                 foreach ($parameters as $element) {
                     $this->bag->set($element->getName(), (string) $element);
@@ -47,6 +54,8 @@ class OEmbed extends Provider implements ProviderInterface
             }
         // extract from json
         } else {
+            $endPointRequest = $endPointRequest->withQueryParameter('format', 'json');
+
             if (($parameters = $endPointRequest->getJsonContent()) && empty($parameters['Error'])) {
                 $this->bag->set($parameters);
             }
@@ -90,6 +99,19 @@ class OEmbed extends Provider implements ProviderInterface
             case 'movie':
                 return 'video';
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTags()
+    {
+        if ($this->bag->has('meta[keywords]')) {
+            //it means we are using iframe.ly api
+            return array_map('trim', explode(',', $this->bag->get('meta[keywords]')));
+        }
+
+        return [];
     }
 
     /**
@@ -196,6 +218,7 @@ class OEmbed extends Provider implements ProviderInterface
 
     /**
      * Extract oembed information from the <link rel="alternate"> elements
+     * Note: Some sites use <meta rel="alternate"> instead.
      *
      * @param \DOMDocument $html
      *
@@ -203,7 +226,8 @@ class OEmbed extends Provider implements ProviderInterface
      */
     protected static function getEndPointFromDom(\DOMDocument $html)
     {
-        foreach (Utils::getLinks($html) as $link) {
+        foreach (['link', 'meta'] as $tagName) {
+            foreach (Utils::getLinks($html, $tagName) as $link) {
             list($rel, $href, $element) = $link;
 
             if (empty($href)) {
@@ -221,9 +245,10 @@ class OEmbed extends Provider implements ProviderInterface
             }
         }
     }
+    }
 
     /**
-     * Returns the oembed link from the request
+     * Returns the oembed link from the request.
      *
      * @param Request $request
      * @param array   $config
@@ -233,21 +258,58 @@ class OEmbed extends Provider implements ProviderInterface
     protected static function getEndPointFromRequest(Request $request, array $config)
     {
         //Search the oembed provider using the domain
-        $class = 'Embed\\Providers\\OEmbed\\'.str_replace(' ', '', ucwords(strtolower(str_replace('-', ' ', $request->url->getDomain()))));
+        $class = self::getClassFromRequest($request);
 
         if (class_exists($class) && $request->match($class::getPatterns())) {
             return [
-                'endPoint' => $class::getEndpoint(),
-                'params' => $class::getParams($request->url),
+                'endPoint' => $class::getEndpoint($request),
+                'params' => $class::getParams($request),
             ];
         }
 
         //Search using embedly
         if (!empty($config['embedlyKey']) && $request->match(OEmbed\Embedly::getPatterns())) {
             return [
-                'endPoint' => OEmbed\Embedly::getEndpoint(),
-                'params' => OEmbed\Embedly::getParams($request->url) + ['key' => $config['embedlyKey']],
+                'endPoint' => OEmbed\Embedly::getEndpoint($request),
+                'params' => OEmbed\Embedly::getParams($request) + ['key' => $config['embedlyKey']],
             ];
         }
+
+        //Search using iframely
+        if (!empty($config['iframelyKey']) && $request->match(OEmbed\Iframely::getPatterns())) {
+            return [
+                'endPoint' => OEmbed\Iframely::getEndpoint($request),
+                'params' => OEmbed\Iframely::getParams($request) + ['api_key' => $config['iframelyKey']],
+            ];
+        }
+    }
+
+    /**
+     * Return the class name implementing an oEmbed provider.
+     *
+     * @param Request $request
+     *
+     * @return string
+     */
+    protected static function getClassFromRequest(Request $request)
+    {
+        return 'Embed\\Providers\\OEmbed\\'.$request->getClassNameForDomain();
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return bool
+     */
+    protected static function providerEmbedInDomIsBroken(Request $request)
+    {
+        $class = self::getClassFromRequest($request);
+
+        if (class_exists($class) && $request->match($class::getPatterns())) {
+            return $class::embedInDomIsBroken();
+        }
+
+        // Fall-through default in case this called for an invalid class
+        return false;
     }
 }

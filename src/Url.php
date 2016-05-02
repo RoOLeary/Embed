@@ -1,35 +1,38 @@
 <?php
-/**
- * Class to split and manipulate url data
- */
+
 namespace Embed;
 
+/**
+ * Class to split and manipulate url data.
+ */
 class Url
 {
     protected $info;
 
+    public static $validate = false;
+
     /**
-     * Constructor. Sets the url
+     * Constructor. Sets the url.
      *
      * @param string $url The url value
      */
     public function __construct($url)
     {
-        $this->setUrl($url);
-    }
-
-    /**
-     * Set a new url
-     *
-     * @param string $url The url
-     */
-    public function setUrl($url)
-    {
         $this->parseUrl($url);
     }
 
     /**
-     * Return the url
+     * Returns the url.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->getUrl();
+    }
+
+    /**
+     * Return the url.
      *
      * @return string The current url
      */
@@ -43,7 +46,7 @@ class Url
      *
      * @param string|array $patterns The pattern or an array with various patterns
      *
-     * @return boolean True if the url match, false if not
+     * @return bool True if the url match, false if not
      */
     public function match($patterns)
     {
@@ -65,7 +68,17 @@ class Url
     }
 
     /**
-     * Return the extension of the url (html, php, jpg, etc)
+     * Return the content of the url (for embedded images).
+     *
+     * @return string The content or null
+     */
+    public function getContent()
+    {
+        return isset($this->info['content']) ? $this->info['content'] : null;
+    }
+
+    /**
+     * Return the extension of the url (html, php, jpg, etc).
      *
      * @return string The scheme or null
      */
@@ -75,7 +88,26 @@ class Url
     }
 
     /**
-     * Return the scheme of the url (for example http, https, ftp, etc)
+     * Returns a clone with other extension.
+     *
+     * @param string $extension
+     *
+     * @return Url
+     */
+    public function withExtension($extension)
+    {
+        $clone = clone $this;
+        $clone->info['extension'] = $extension;
+
+        if (empty($clone->info['file'])) {
+            $clone->info['file'] = array_pop($clone->info['path']);
+        }
+
+        return $clone;
+    }
+
+    /**
+     * Return the scheme of the url (for example http, https, ftp, etc).
      *
      * @return string The scheme or null
      */
@@ -85,17 +117,22 @@ class Url
     }
 
     /**
-     * Change the scheme of the url
+     * Returns a clone with other scheme.
      *
-     * @param string $scheme The new scheme
+     * @param string $scheme
+     *
+     * @return Url
      */
-    public function setScheme($scheme)
+    public function withScheme($scheme)
     {
-        $this->info['scheme'] = $scheme;
+        $clone = clone $this;
+        $clone->info['scheme'] = $scheme;
+
+        return $clone;
     }
 
     /**
-     * Return the host of the url (for example: google.com)
+     * Return the host of the url (for example: google.com).
      *
      * @return string The host or null
      */
@@ -105,19 +142,24 @@ class Url
     }
 
     /**
-     * Change the host of the url
+     * Returns a clone with other host.
      *
-     * @param string $host The new host
+     * @param string $host
+     *
+     * @return Url
      */
-    public function setHost($host)
+    public function withHost($host)
     {
-        $this->info['host'] = $host;
+        $clone = clone $this;
+        $clone->info['host'] = $host;
+
+        return $clone;
     }
 
     /**
-     * Return the domain of the url (for example: google)
+     * Return the domain of the url (for example: google).
      *
-     * @param boolean $first_level True to return the first level domain (.com, .es, etc)
+     * @param bool $first_level True to return the first level domain (.com, .es, etc)
      *
      * @return string
      */
@@ -148,121 +190,210 @@ class Url
     }
 
     /**
-     * Edit a specific directory in the path of the url
+     * Return a specific directory position in the path of the url.
      *
-     * @param int    $key   The position of the subdirectory (0 based index)
-     * @param string $value The new value
+     * @param int $position The position of the directory (0 based index)
+     *
+     * @return string|null
      */
-    public function setDirectory($key, $value)
+    public function getDirectoryPosition($position)
     {
-        if ($key > count($this->info['path'])) {
-            $this->info['path'][] = $this->info['file'];
-            $this->info['file'] = $value;
-
-            return;
-        }
-
-        if ($key === count($this->info['path'])) {
-            $this->info['file'] = $value;
-
-            return;
-        }
-
-        $this->info['path'][$key] = $value;
-    }
-
-    /**
-     * Return a specific directory in the path of the url
-     *
-     * @param int $key The position of the subdirectory (0 based index)
-     *
-     * @return string The directory or null
-     */
-    public function getDirectory($key)
-    {
-        if ($key === count($this->info['path'])) {
+        if ($position === count($this->info['path'])) {
             return $this->info['file'];
         }
 
-        return isset($this->info['path'][$key]) ? $this->info['path'][$key] : null;
+        return isset($this->info['path'][$position]) ? $this->info['path'][$position] : null;
     }
 
     /**
-     * Set a new path
+     * Returns a clone with other directory in a specific position.
+     *
+     * @param int|null $key   The position of the subdirectory (0 based index).
+     * @param string   $value The new value
+     *
+     * @return Url
      */
-    public function setPath($path)
+    public function withDirectoryPosition($key, $value)
     {
-        $this->info['path'] = [];
-        $this->info['file'] = null;
+        $clone = clone $this;
 
-        foreach (explode('/', $path) as $dir) {
-            if ($dir !== '') {
-                $this->info['path'][] = $dir;
-            }
+        if ($key === count($clone->info['path'])) {
+            $clone->info['file'] = $value;
+
+            return $clone;
         }
 
-        if (substr($path, -1) !== '/') {
-            $this->info['file'] = array_pop($this->info['path']);
-        }
+        $clone->info['path'][$key] = $value;
+
+        return $clone;
     }
 
     /**
-     * Return the url path
+     * Return all directories.
+     *
+     * @return string
      */
-    public function getPath($file = false)
+    public function getDirectories()
     {
-        $path = !empty($this->info['path']) ? '/'.implode('/', $this->info['path']).'/' : '/';
+        return !empty($this->info['path']) ? '/'.implode('/', $this->info['path']).'/' : '/';
+    }
 
-        if ($file && !empty($this->info['file'])) {
+    /**
+     * Slice path.
+     *
+     * @param int      $offset
+     * @param int|null $length
+     *
+     * @return array
+     */
+    public function getSlicePath($offset, $length = null)
+    {
+        $array = explode('/', $this->getPath());
+
+        if (empty($array[0])) {
+            array_shift($array);
+        }
+
+        return array_slice($array, $offset, $length);
+    }
+
+    /**
+     * Return the url path.
+     *
+     * @return string
+     */
+    public function getPath()
+    {
+        $path = !empty($this->info['path']) ? '/'.implode('/', array_map('urlencode', $this->info['path'])).'/' : '/';
+
+        if (isset($this->info['file'])) {
             $path .= $this->info['file'];
+
+            if (isset($this->info['extension'])) {
+                $path .= '.'.$this->info['extension'];
+            }
         }
 
         return $path;
     }
 
     /**
-     * Check if the url has a GET parameter
+     * Returns a clone with other path.
      *
-     * @param string $name The parameter name
+     * @param string $path
      *
-     * @return boolean True if it exists, false if not
+     * @return Url
      */
-    public function hasParameter($name)
+    public function withPath($path)
+    {
+        $clone = clone $this;
+
+        $clone->setPath($path);
+
+        return $clone;
+    }
+
+    /**
+     * Returns a clone with path appended.
+     *
+     * @param string $path
+     *
+     * @return Url
+     */
+    public function withAddedPath($path)
+    {
+        $path = $this->getPath().'/'.$path;
+
+        return $this->withPath($path);
+    }
+
+    /**
+     * Check if the url has a query parameter.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function hasQueryParameter($name)
     {
         return isset($this->info['query'][$name]);
     }
 
     /**
-     * Returns a GET parameter value
+     * Returns all query parameters.
      *
-     * @param string $name The parameter name
-     *
-     * @return string The parameter value or null
+     * @return array
      */
-    public function getParameter($name)
+    public function getQueryParameters()
+    {
+        return $this->info['query'];
+    }
+
+    /**
+     * Returns a query parameter value.
+     *
+     * @param string $name
+     *
+     * @return string|null
+     */
+    public function getQueryParameter($name)
     {
         return isset($this->info['query'][$name]) ? $this->info['query'][$name] : null;
     }
 
     /**
-     * Set a new GET parameter or modify an existing one
+     * Returns a clone with a new query parameter.
      *
-     * @param string|array $name  The parameter name or an array of parameters
-     * @param string       $value The parameter value
+     * @param string $name  The parameter name
+     * @param string $value The parameter value
+     *
+     * @return Url
      */
-    public function setParameter($name, $value = null)
+    public function withQueryParameter($name, $value)
     {
-        if (is_array($name)) {
-            $this->info['query'] = empty($this->info['query']) ? $name : array_replace($this->info['query'], $name);
-        } else {
-            $this->info['query'][$name] = $value;
-        }
+        $clone = clone $this;
+
+        $clone->info['query'][$name] = $value;
+
+        return $clone;
     }
 
     /**
-     * Return the url fragment
+     * Returns a clone with new query parameters merged.
      *
-     * @return string The fragment value or null
+     * @param array $parameters
+     *
+     * @return Url
+     */
+    public function withAddedQueryParameters(array $parameters)
+    {
+        $clone = clone $this;
+
+        $clone->info['query'] = empty($clone->info['query']) ? $parameters : array_replace($clone->info['query'], $parameters);
+
+        return $clone;
+    }
+
+    /**
+     * Returns a clone with new query parameters.
+     *
+     * @param array $parameters
+     *
+     * @return Url
+     */
+    public function withQueryParameters(array $parameters)
+    {
+        $clone = clone $this;
+
+        $clone->info['query'] = $parameters;
+
+        return $clone;
+    }
+
+    /**
+     * Return the url fragment.
+     *
+     * @return string
      */
     public function getFragment()
     {
@@ -270,48 +401,27 @@ class Url
     }
 
     /**
-     * Return the fragments as an array
-     *
-     * @return array The fragment values
-     */
-    public function getFragmentArray()
-    {
-        if ($fragment = $this->getFragment()) {
-            parse_str($fragment, $values);
-
-            return $values;
-        }
-
-        return [];
-    }
-
-    /**
-     * Set the url fragment
-     *
-     * @param string $fragment The new fragment value
-     */
-    public function setFragment($fragment)
-    {
-        $this->info['fragment'] = $fragment;
-    }
-
-    /**
-     * Build the url using the splitted data
+     * Build the url using the splitted data.
      */
     protected function buildUrl()
     {
         $url = '';
 
+        if (isset($this->info['content'])) {
+            return 'data:'.$this->info['content'];
+        }
+
         if (isset($this->info['scheme'])) {
             $url .= $this->info['scheme'].'://';
         }
+
         if (isset($this->info['host'])) {
             $url .= $this->info['host'];
         }
 
-        $url .= $this->getPath(true);
+        $url .= $this->getPath();
 
-        if (isset($this->info['query'])) {
+        if (!empty($this->info['query'])) {
             $url .= '?'.http_build_query($this->info['query']);
         }
         if (isset($this->info['fragment'])) {
@@ -322,38 +432,58 @@ class Url
     }
 
     /**
-     * Parse an url and split into different pieces
+     * Parse an url and split into different pieces.
      *
      * @param string $url The url to parse
      */
     protected function parseUrl($url)
     {
-        if (strpos($url, '//') === 0) {
-            $url = "http:$url";
+        // do not validate urls because some real urls fails.
+        // Example: http://jouey-.deviantart.com/art/market-153836478 fails.
+        if (self::$validate && substr($url, 0, 5) !== 'data:' && !filter_var($url, FILTER_VALIDATE_URL)) {
+            throw new Exceptions\InvalidUrlException("The url '{$url}' is not valid");
         }
 
         $this->info = parse_url($url);
 
-        if (isset($this->info['query'])) {
-            parse_str($this->info['query'], $this->info['query']);
-        }
-
         if (isset($this->info['path'])) {
             $this->setPath($this->info['path']);
-
-            if (!empty($this->info['file']) && preg_match('/\.([\w]+)$/', $this->info['file'], $match)) {
-                $this->info['extension'] = $match[1];
-            }
         }
+
+        if (empty($this->info['query'])) {
+            $this->info['query'] = [];
+
+            return;
+        }
+
+        // Fix dots and other characters used in query's variables names
+        // https://github.com/oscarotero/Embed/issues/101
+        $queryString = preg_replace_callback('/(^|(?<=&))[^=[&]+/', function ($key) {
+            return bin2hex(urldecode($key[0]));
+        }, $this->info['query']);
+
+        parse_str($queryString, $query);
+
+        $this->info['query'] = [];
+
+        foreach ((array) $query as $key => $value) {
+            $this->info['query'][hex2bin($key)] = $value;
+        }
+
+        array_walk_recursive($this->info['query'], function (&$value) {
+            $value = urldecode($value);
+        });
     }
 
     /**
-     * Return an absolute url based in a relative
+     * Return an absolute url based in a relative.
      *
      * @return string The absolute url
      */
     public function getAbsolute($url)
     {
+        $url = trim($url);
+
         if (empty($url)) {
             return '';
         }
@@ -378,6 +508,45 @@ class Url
             return $this->getScheme().'://'.$this->getHost().$url;
         }
 
-        return $this->getScheme().'://'.$this->getHost().$this->getPath().$url;
+        return $this->getScheme().'://'.$this->getHost().$this->getDirectories().$url;
+    }
+
+    /**
+     * Parses and adds path and file value.
+     *
+     * @param string $path
+     */
+    private function setPath($path)
+    {
+        $this->info['path'] = $this->info['file'] = $this->info['extension'] = $this->info['content'] = null;
+
+        if ($this->getScheme() === 'data') {
+            $this->info['content'] = $path;
+
+            return;
+        }
+
+        $file = substr(strrchr($path, '/'), 1);
+
+        if (strlen($file)) {
+            $path = substr($path, 0, -strlen($file));
+
+            if (preg_match('/(.*)\.([\w]+)$/', $file, $match)) {
+                $this->info['file'] = $match[1];
+                $this->info['extension'] = $match[2];
+            } else {
+                $this->info['file'] = $file;
+            }
+        }
+
+        $this->info['path'] = [];
+
+        foreach (explode('/', $path) as $dir) {
+            $dir = urldecode($dir);
+
+            if ($dir !== '') {
+                $this->info['path'][] = $dir;
+            }
+        }
     }
 }

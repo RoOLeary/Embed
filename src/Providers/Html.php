@@ -1,7 +1,7 @@
 <?php
+
 namespace Embed\Providers;
 
-use Embed\Url;
 use Embed\Bag;
 use Embed\Utils;
 
@@ -28,9 +28,9 @@ class Html extends Provider implements ProviderInterface
         self::extractFromLink($html, $this->bag);
         self::extractFromMeta($html, $this->bag);
 
-        $main = self::getMainElement($html);
-
-        self::extractImages($main, $this->bag, $this->request->url->getDomain());
+        if ($main = self::getMainElement($html)) {
+            $this->extractImages($main);
+        }
 
         //Title
         $title = $html->getElementsByTagName('title');
@@ -78,6 +78,16 @@ class Html extends Provider implements ProviderInterface
     /**
      * {@inheritdoc}
      */
+    public function getTags()
+    {
+        $keywords = $this->bag->get('keywords').','.$this->bag->get('news_keywords');
+
+        return array_filter(array_map('trim', explode(',', $keywords)));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getSource()
     {
         $feeds = $this->bag->get('feeds');
@@ -117,7 +127,7 @@ class Html extends Provider implements ProviderInterface
     /**
      * {@inheritdoc}
      */
-    public function getProviderIcons()
+    public function getProviderIconsUrls()
     {
         return (array) $this->bag->get('icons') ?: [];
     }
@@ -157,15 +167,34 @@ class Html extends Provider implements ProviderInterface
      */
     public function getPublishedTime()
     {
-        return $this->bag->get('pub_date')
-            ?: $this->bag->get('date')
-            ?: $this->bag->get('pagerender')
-            ?: $this->bag->get('datepublished')
-            ?: $this->bag->get('urldate');
+        $keys = [
+            'article:published_time',
+            'created',
+            'date',
+            'datepublished',
+            'datePublished',
+            'newsrepublic:publish_date',
+            'pagerender',
+            'pub_date',
+            'publication-date',
+            'publish-date',
+            'rc.datecreation',
+            'timestamp',
+            'article:modified_time',
+            'eomportal-lastupdate',
+            'shareaholic:article_published_time',
+            'urldate',
+        ];
+
+        foreach ($keys as $key) {
+            if ($found = $this->bag->get($key)) {
+                return $found;
+            }
+        }
     }
 
     /**
-     * Extract information from the <link> elements
+     * Extract information from the <link> elements.
      *
      * @param \DOMDocument $html
      * @param Bag          $bag
@@ -209,7 +238,7 @@ class Html extends Provider implements ProviderInterface
     }
 
     /**
-     * Extract information from the <meta> elements
+     * Extract information from the <meta> elements.
      *
      * @param \DOMDocument $html
      * @param Bag          $bag
@@ -248,27 +277,20 @@ class Html extends Provider implements ProviderInterface
     }
 
     /**
-     * Extract <img> elements
+     * Extract <img> elements.
      *
      * @param \DOMElement $html
-     * @param Bag         $bag
-     * @param null|string $domain
      */
-    protected static function extractImages(\DOMElement $html, Bag $bag, $domain = null)
+    protected function extractImages(\DOMElement $html)
     {
+        $domain = $this->request->getDomain();
+
         foreach ($html->getElementsByTagName('img') as $img) {
             if ($img->hasAttribute('src')) {
-                $src = new Url($img->getAttribute('src'));
+                $src = $this->request->createUrl($img->getAttribute('src'));
 
-                //Is src relative?
-                if (!$src->getDomain()) {
-                    $bag->add('images', $src->getUrl());
-                    continue;
-                }
-
-                //Avoid external images or in external links
-                if ($domain !== null) {
-                    if ($src->getDomain() !== $domain) {
+                //Avoid external images
+                if ($src->getContent() === null && $src->getDomain() !== $domain) {
                         continue;
                     }
 
@@ -277,9 +299,9 @@ class Html extends Provider implements ProviderInterface
                     while ($parent && isset($parent->tagName)) {
                         if ($parent->tagName === 'a') {
                             if ($parent->hasAttribute('href')) {
-                                $href = new Url($parent->getAttribute('href'));
+                            $href = $this->request->createUrl($parent->getAttribute('href'));
 
-                                if ($href->getDomain() && $src->getDomain() !== $domain) {
+                            if ($href->getDomain() !== $domain) {
                                     continue 2;
                                 }
                             }
@@ -293,14 +315,13 @@ class Html extends Provider implements ProviderInterface
                         $parent = $parent->parentNode;
                     }
 
-                    $bag->add('images', $src->getUrl());
-                }
+                $this->bag->add('images', $src->getUrl());
             }
         }
     }
 
     /**
-     * Returns the main element of the document
+     * Returns the main element of the document.
      *
      * @param \DOMDocument $html
      *

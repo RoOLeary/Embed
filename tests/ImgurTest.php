@@ -1,14 +1,18 @@
 <?php
-class ImgurTest extends PHPUnit_Framework_TestCase
+
+class ImgurTest extends TestCaseBase
 {
     public function testOne()
     {
-        $info = Embed\Embed::create('http://i.imgur.com/X6rkCc5.jpg');
-
-        $this->assertEquals($info->title, 'Picture of a Mountain Gorilla right before he punched the photographer');
-        $this->assertEquals($info->imageWidth, 2000);
-        $this->assertEquals($info->imageHeight, 1332);
-        $this->assertEquals($info->type, 'photo');
-        $this->assertEquals($info->providerName, 'Imgur');
+        $this->assertEmbed(
+            'http://i.imgur.com/X6rkCc5.jpg',
+            [
+                'title' => 'http://i.imgur.com/X6rkCc5.jpg',
+                'imageWidth' => 2000,
+                'imageHeight' => 1332,
+                'type' => 'photo',
+                'providerName' => 'Imgur',
+            ]
+        );
     }
 }

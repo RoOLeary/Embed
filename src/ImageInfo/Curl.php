@@ -1,11 +1,14 @@
 <?php
+
 namespace Embed\ImageInfo;
 
 /**
- * Class to retrieve the size and mimetype of images using curl
+ * Class to retrieve the size and mimetype of images using curl.
  */
 class Curl implements ImageInfoInterface
 {
+    use UtilsTrait;
+
     protected static $mimetypes = [
         'image/jpeg',
         'image/png',
@@ -40,78 +43,59 @@ class Curl implements ImageInfoInterface
             return [];
         }
 
-        if (count($images) === 1) {
-            $info = self::getImageInfo($images[0], $config);
-
-            return empty($info) ? [] : [array_merge($images[0], $info)];
-        }
-
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $connections = [];
         $curl = curl_multi_init();
+        $result = [];
 
         foreach ($images as $k => $image) {
+            if (strpos($image['value'], 'data:') === 0) {
+                if ($info = static::getEmbeddedImageInfo($image['value'])) {
+                    $result[$k] = array_merge($image, $info);
+                }
+
+                continue;
+            }
+
             $connections[$k] = new static($image['value'], $finfo, $config);
 
             curl_multi_add_handle($curl, $connections[$k]->getConnection());
         }
 
-        do {
-            $return = curl_multi_exec($curl, $active);
-        } while ($return === CURLM_CALL_MULTI_PERFORM);
-
-        while ($active && $return === CURLM_OK) {
-            if (curl_multi_select($curl) === -1) {
-                usleep(100);
-            }
-
+        if ($connections) {
             do {
                 $return = curl_multi_exec($curl, $active);
             } while ($return === CURLM_CALL_MULTI_PERFORM);
-        }
 
-        $result = [];
+            while ($active && $return === CURLM_OK) {
+                if (curl_multi_select($curl) === -1) {
+                    usleep(100);
+                }
 
-        foreach ($connections as $k => $connection) {
-            curl_multi_remove_handle($curl, $connection->getConnection());
+                do {
+                    $return = curl_multi_exec($curl, $active);
+                } while ($return === CURLM_CALL_MULTI_PERFORM);
+            }
 
-            if (($info = $connection->getInfo())) {
-                $result[] = array_merge($images[$k], $info);
+            foreach ($connections as $k => $connection) {
+                curl_multi_remove_handle($curl, $connection->getConnection());
+
+                if (($info = $connection->getInfo())) {
+                    $result[$k] = array_merge($images[$k], $info);
+                }
             }
         }
 
         finfo_close($finfo);
         curl_multi_close($curl);
 
+        ksort($result, SORT_NUMERIC);
+
         return $result;
     }
 
     /**
-     * Get the info of only one image
-     *
-     * @param string     $image
-     * @param null|array $config
-     *
-     * @return array|null
-     */
-    public static function getImageInfo($image, array $config = null)
-    {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $img = new static($image['value'], $finfo, $config);
-
-        $curl = $img->getConnection();
-        curl_exec($curl);
-        curl_close($curl);
-
-        $info = $img->getInfo();
-
-        finfo_close($finfo);
-
-        return $info;
-    }
-
-    /**
-     * Init the curl connection
+     * Init the curl connection.
      *
      * @param string     $url    The image url
      * @param resource   $finfo  A fileinfo resource to get the mimetype
@@ -135,7 +119,7 @@ class Curl implements ImageInfoInterface
     }
 
     /**
-     * Returns the curl resource
+     * Returns the curl resource.
      *
      * @return resource
      */
@@ -145,7 +129,7 @@ class Curl implements ImageInfoInterface
     }
 
     /**
-     * Get the image info with the format [$width, $height, $mimetype]
+     * Get the image info with the format [$width, $height, $mimetype].
      *
      * @return null|array
      */
@@ -155,7 +139,7 @@ class Curl implements ImageInfoInterface
     }
 
     /**
-     * Callback used to save the first bytes of the body content
+     * Callback used to save the first bytes of the body content.
      *
      * @param resource $connection
      * @param string   $string

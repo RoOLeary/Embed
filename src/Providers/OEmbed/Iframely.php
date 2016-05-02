@@ -1,14 +1,17 @@
 <?php
+
 namespace Embed\Providers\OEmbed;
 
-class Blip extends OEmbedImplementation
+use Embed\Url;
+
+class Iframely extends OEmbedImplementation
 {
     /**
      * {@inheritdoc}
      */
-    public static function getEndPoint()
+    public static function getEndPoint(Url $url)
     {
-        return 'http://blip.tv/oembed/';
+        return 'http://open.iframe.ly/api/oembed';
     }
 
     /**
@@ -16,6 +19,6 @@ class Blip extends OEmbedImplementation
      */
     public static function getPatterns()
     {
-        return ['http://blip.tv/*'];
+        return ['*'];
     }
 }

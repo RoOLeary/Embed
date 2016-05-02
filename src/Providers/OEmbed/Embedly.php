@@ -1,4 +1,5 @@
 <?php
+
 namespace Embed\Providers\OEmbed;
 
 use Embed\Url;
@@ -8,7 +9,7 @@ class Embedly extends OEmbedImplementation
     /**
      * {@inheritdoc}
      */
-    public static function getEndPoint()
+    public static function getEndPoint(Url $url)
     {
         return 'http://api.embed.ly/1/oembed';
     }
@@ -651,17 +652,6 @@ class Embedly extends OEmbedImplementation
             'http://radioreddit.com/?q=songs*',
             'http://www.radioreddit.com/?q=songs*',
             'http://www.gogoyoko.com/song/*',
-        ];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function getParams(Url $url)
-    {
-        return [
-            'url' => $url->getUrl(),
-            'format' => 'json',
         ];
     }
 }

@@ -1,13 +1,28 @@
 <?php
-class ArchiveTest extends PHPUnit_Framework_TestCase
+
+class ArchiveTest extends TestCaseBase
 {
     public function testOne()
     {
-        $info = Embed\Embed::create('https://archive.org/details/dn2015-0220_vid');
+        $this->assertEmbed(
+            'https://archive.org/details/dn2015-0220_vid',
+            [
+                'width' => 640,
+                'height' => 480,
+                'type' => 'video',
+                'providerName' => 'Internet Archive',
+            ]
+        );
+    }
 
-        $this->assertEquals($info->width, 640);
-        $this->assertEquals($info->height, 480);
-        $this->assertEquals($info->type, 'video');
-        $this->assertEquals($info->providerName, 'Internet Archive');
+    public function testTwo()
+    {
+        $this->assertEmbed(
+            'https://archive.org/details/librivoxaudio',
+            [
+                'type' => 'rich',
+                'providerName' => 'Internet Archive',
+            ]
+        );
     }
 }

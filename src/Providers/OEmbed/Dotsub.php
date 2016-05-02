@@ -1,12 +1,15 @@
 <?php
+
 namespace Embed\Providers\OEmbed;
+
+use Embed\Url;
 
 class Dotsub extends OEmbedImplementation
 {
     /**
      * {@inheritdoc}
      */
-    public static function getEndPoint()
+    public static function getEndPoint(Url $url)
     {
         return 'http://dotsub.com/services/oembed';
     }

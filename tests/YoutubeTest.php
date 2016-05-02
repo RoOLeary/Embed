@@ -1,18 +1,93 @@
 <?php
-class YoutubeTest extends PHPUnit_Framework_TestCase
+
+class YoutubeTest extends TestCaseBase
 {
     public function testOne()
     {
-        $info = Embed\Embed::create('http://www.youtube.com/watch?v=eiHXASgRTcA');
+        $this->assertEmbed(
+            'http://www.youtube.com/watch?v=eiHXASgRTcA',
+            [
+                'title' => 'Noisy kittens waiting for dinner!',
+                'imageWidth' => 480,
+                'imageHeight' => 360,
+                'type' => 'video',
+                'authorName' => 'smshdchrb',
+                'authorUrl' => 'https://www.youtube.com/user/smshdchrb',
+                'providerName' => 'YouTube',
+                'providerUrl' => 'https://www.youtube.com/',
+                'tags' => [
+                    'kittens',
+                    'cats',
+                    'hungry',
+                    'cat',
+                    'baby',
+                    'eight',
+                    'weeks',
+                    'old',
+                    'noisy',
+                    'meow',
+                    'funny',
+                    'kitties',
+                    'feline',
+                    'dinner',
+                    'excited',
+                    'loud',
+                    'cute',
+                    'pet',
+                    'food',
+                    'time',
+                    'felix',
+                    'kitty',
+                    'catz',
+                    'lolcat',
+                    'kitten',
+                    'talking',
+                    'adorable',
+                    'climbing',
+                    'feeding',
+                    'demanding',
+                    'fostered',
+                    'foster',
+                    'tabby',
+                    'blue',
+                    'tails',
+                    'waiting',
+                    'feed',
+                    'crying',
+                    'yelling',
+                    'flu',
+                    'ears',
+                    'funny cats',
+                    'funny kittens',
+                    'cat meme',
+                    'grumpy cat',
+                    'Cat (Fictional Character)',
+                    'Feline (Musical Album)',
+                    'Pet (Website Category)',
+                    'Feline (album)',
+                    'Cat (TV Character)',
+                    'noms',
+                    'lol',
+                    'funnycats',
+                    'catsofyoutube',
+                    'l...',
+                ],
+            ]
+        );
+    }
 
-        $this->assertEquals($info->title, 'Noisy kittens waiting for dinner!');
-        $this->assertEquals($info->description, '7 week old fostered kittens waiting on their dinner being prepared. They had been ill with cat flu and were just starting to get their appetite back. Because...');
-        $this->assertEquals($info->imageWidth, 480);
-        $this->assertEquals($info->imageHeight, 360);
-        $this->assertEquals($info->type, 'video');
-        $this->assertEquals($info->authorName, 'smshdchrb');
-        $this->assertEquals($info->authorUrl, 'http://www.youtube.com/user/smshdchrb');
-        $this->assertEquals($info->providerName, 'YouTube');
-        $this->assertEquals($info->providerUrl, 'http://www.youtube.com/');
+    public function testPlayList()
+    {
+        $this->assertEmbed(
+            'https://www.youtube.com/playlist?list=PL4qTakKkQATKOyZPJG_cAMnRtF7fAIdST',
+            [
+                'title' => 'De espaldas al patriarcado',
+                'imageWidth' => 480,
+                'imageHeight' => 360,
+                'type' => 'video',
+                'code' => '<iframe width="480" height="270" src="https://www.youtube.com/embed/videoseries?list=PL4qTakKkQATKOyZPJG_cAMnRtF7fAIdST" frameborder="0" allowfullscreen></iframe>',
+                'authorName' => 'Scadrei5',
+            ]
+        );
     }
 }

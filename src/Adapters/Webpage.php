@@ -1,12 +1,13 @@
 <?php
-/**
- * Adapter to provide all information from any webpage
- */
+
 namespace Embed\Adapters;
 
 use Embed\Request;
 use Embed\Providers;
 
+/**
+ * Adapter to provide all information from any webpage.
+ */
 class Webpage extends Adapter implements AdapterInterface
 {
     /**
@@ -14,13 +15,13 @@ class Webpage extends Adapter implements AdapterInterface
      */
     public static function check(Request $request)
     {
-        return true;
+        return $request->isValid();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function run()
+    protected function run()
     {
         $this->addProvider('oembed', new Providers\OEmbed());
         $this->addProvider('opengraph', new Providers\OpenGraph());

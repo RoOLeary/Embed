@@ -1,11 +1,12 @@
 <?php
-/**
- * Class to return the urls from a xml feed
- */
+
 namespace Embed\Sources;
 
 use Embed\Request;
 
+/**
+ * Class to return the urls from a xml feed.
+ */
 class Feed extends Source implements SourceInterface
 {
     protected $data;
@@ -52,7 +53,7 @@ class Feed extends Source implements SourceInterface
      */
     public function getSourceUrl()
     {
-        return $this->request->url->getUrl();
+        return $this->request->getUrl();
     }
 
     /**
@@ -60,7 +61,7 @@ class Feed extends Source implements SourceInterface
      */
     public function getProviderUrl()
     {
-        return !empty($this->data['url']) ? $this->data['url'] : ($this->request->url->getScheme().'://'.$this->request->url->getHost());
+        return !empty($this->data['url']) ? $this->data['url'] : ($this->request->getScheme().'://'.$this->request->getHost());
     }
 
     /**
@@ -72,7 +73,7 @@ class Feed extends Source implements SourceInterface
     }
 
     /**
-     * Search data from Rss
+     * Search data from Rss.
      *
      * @param \SimpleXMLElement $xml
      *
@@ -95,7 +96,7 @@ class Feed extends Source implements SourceInterface
     }
 
     /**
-     * Search items from XML
+     * Search items from XML.
      *
      * @param \SimpleXMLElement $items
      *
@@ -135,7 +136,7 @@ class Feed extends Source implements SourceInterface
     }
 
     /**
-     * Search data from Atom xml
+     * Search data from Atom xml.
      *
      * @param \SimpleXMLElement $xml
      *
@@ -166,7 +167,7 @@ class Feed extends Source implements SourceInterface
     }
 
     /**
-     * Search entries from Atom xml
+     * Search entries from Atom xml.
      *
      * @param \SimpleXMLElement $entries
      *

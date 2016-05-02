@@ -1,14 +1,32 @@
 <?php
-class SpotifyTest extends PHPUnit_Framework_TestCase
-{
-    public function testOne()
-    {
-        $info = Embed\Embed::create('http://open.spotify.com/track/7nDQMtLxu94xtlTR8bEqjU');
 
-        $this->assertEquals($info->title, 'Faded');
-        $this->assertEquals($info->type, 'rich');
-        $this->assertEquals($info->code, '<iframe src="https://embed.spotify.com/?uri=spotify:album:68XUEsgZs7cJVtYlvCJSGz" frameborder="0" allowTransparency="true" style="border:none;overflow:hidden;width:300px;height:380px;"></iframe>');
-        $this->assertEquals($info->providerName, 'Spotify');
-        $this->assertEquals($info->providerUrl, 'https://spotify.com');
+class SpotifyTest extends TestCaseBase
+{
+    public function testPlay()
+    {
+        $this->assertEmbed(
+            'https://play.spotify.com/album/7s66wU1XJ2NsUuWM2NKiUV',
+            [
+                'title' => 'Various Artists - A Cantar con Xabarin (Vol. I & II)',
+                'type' => 'rich',
+                'code' => '<iframe src="https://embed.spotify.com/?uri=spotify:album:7s66wU1XJ2NsUuWM2NKiUV" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>',
+                'providerName' => 'Spotify',
+                'providerUrl' => 'https://www.spotify.com',
+            ]
+        );
+    }
+
+    public function testOpen()
+    {
+        $this->assertEmbed(
+            'https://open.spotify.com/album/7s66wU1XJ2NsUuWM2NKiUV',
+            [
+                'title' => 'Various Artists - A Cantar con Xabarin (Vol. I & II)',
+                'type' => 'rich',
+                'code' => '<iframe src="https://embed.spotify.com/?uri=spotify:album:7s66wU1XJ2NsUuWM2NKiUV" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>',
+                'providerName' => 'Spotify',
+                'providerUrl' => 'https://www.spotify.com',
+            ]
+        );
     }
 }

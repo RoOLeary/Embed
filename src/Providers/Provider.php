@@ -1,11 +1,12 @@
 <?php
+
 namespace Embed\Providers;
 
 use Embed\Request;
 use Embed\Bag;
 
 /**
- * Abstract class used by all providers
+ * Abstract class used by all providers.
  */
 abstract class Provider
 {
@@ -48,6 +49,13 @@ abstract class Provider
     {
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function getTags()
+    {
+        return [];
+    }
     /**
      * {@inheritdoc}
      */

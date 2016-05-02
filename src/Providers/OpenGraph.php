@@ -1,4 +1,5 @@
 <?php
+
 namespace Embed\Providers;
 
 use Embed\Utils;
@@ -34,6 +35,8 @@ class OpenGraph extends Provider implements ProviderInterface
 
             if ($name === 'image') {
                 $this->bag->add('images', $value);
+            } elseif (strpos($name, ':tag') !== false) {
+                $this->bag->add('tags', $value);
             } else {
                 $this->bag->set($name, $value);
             }
@@ -112,6 +115,9 @@ class OpenGraph extends Provider implements ProviderInterface
                     $images = $this->getImagesUrls();
 
                     return Utils::videoHtml(current($images), $video, $this->getWidth(), $this->getHeight());
+
+                case 'text/html':
+                    return Utils::iframe($video, $this->getWidth(), $this->getHeight());
             }
         }
     }
@@ -131,7 +137,15 @@ class OpenGraph extends Provider implements ProviderInterface
     {
         return $this->bag->get('canonical');
     }
-    
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTags()
+    {
+        return (array) $this->bag->get('tags') ?: [];
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -169,6 +183,6 @@ class OpenGraph extends Provider implements ProviderInterface
      */
     public function getPublishedTime()
     {
-        return $this->bag->get('published_time');
+        return $this->bag->get('published_time') ?: $this->bag->get('updated_time');
     }
 }
